@@ -18,6 +18,10 @@ export const Register: React.FC = () => {
     e.preventDefault();
     setError('');
 
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = fullName.trim();
+    const cleanInstitution = institution.trim();
+
     if (password.length < 8) {
       setError('Password must be at least 8 characters long.');
       return;
@@ -26,18 +30,25 @@ export const Register: React.FC = () => {
     setLoading(true);
     try {
       await api.post('/auth/register', {
-        email,
+        email: cleanEmail,
         password,
-        full_name: fullName,
-        institution,
+        full_name: cleanName,
+        institution: cleanInstitution,
       });
 
       // Automatically login on successful registration
-      const loginRes = await api.post('/auth/login', { email, password });
+      const loginRes = await api.post('/auth/login', { email: cleanEmail, password });
       login(loginRes.data.access_token, loginRes.data.user);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Registration failed. Email may already be registered.');
+      const msg = err.response?.data?.detail;
+      if (typeof msg === 'string') {
+        setError(msg);
+      } else if (Array.isArray(msg) && msg.length > 0) {
+        setError(msg[0].msg || 'Registration failed.');
+      } else {
+        setError('Registration failed. An account with this email may already exist.');
+      }
     } finally {
       setLoading(false);
     }

@@ -17,12 +17,21 @@ export const Login: React.FC = () => {
     setError('');
     setLoading(true);
 
+    const cleanEmail = email.trim().toLowerCase();
+
     try {
-      const res = await api.post('/auth/login', { email, password });
+      const res = await api.post('/auth/login', { email: cleanEmail, password });
       login(res.data.access_token, res.data.user);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Authentication failed. Please verify credentials.');
+      const msg = err.response?.data?.detail;
+      if (typeof msg === 'string') {
+        setError(msg);
+      } else if (Array.isArray(msg) && msg.length > 0) {
+        setError(msg[0].msg || 'Authentication failed.');
+      } else {
+        setError('Authentication failed. Please verify credentials.');
+      }
     } finally {
       setLoading(false);
     }

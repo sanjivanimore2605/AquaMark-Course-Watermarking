@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -11,9 +12,10 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register(user_in: UserRegister, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(User.email == user_in.email).first()
+    clean_email = user_in.email.strip().lower()
+    existing = db.query(User).filter(func.lower(User.email) == clean_email).first()
     if existing:
-        raise HTTPException(status_code=400, detail="User with this email already exists.")
+        raise HTTPException(status_code=400, detail="An account with this email address already exists. Please sign in instead.")
     
     # Password strength check
     if len(user_in.password) < 8:
@@ -24,10 +26,10 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
     role = "admin" if user_count == 0 else "instructor"
     
     user = User(
-        email=user_in.email,
+        email=clean_email,
         hashed_password=get_password_hash(user_in.password),
-        full_name=user_in.full_name,
-        institution=user_in.institution,
+        full_name=user_in.full_name.strip() if user_in.full_name else None,
+        institution=user_in.institution.strip() if user_in.institution else None,
         role=role,
         is_active=True,
         is_verified=True
@@ -41,12 +43,13 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(login_data: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == login_data.email).first()
+    clean_email = login_data.email.strip().lower()
+    user = db.query(User).filter(func.lower(User.email) == clean_email).first()
     if not user or not verify_password(login_data.password, user.hashed_password):
-        log_audit_event(db, "LOGIN_FAILED", details={"email": login_data.email}, status="FAILED")
+        log_audit_event(db, "LOGIN_FAILED", details={"email": clean_email}, status="FAILED")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password."
+            detail="Incorrect email or password. Please verify your credentials."
         )
     
     if not user.is_active:
