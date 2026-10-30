@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+// Use environment variable if provided (e.g. VITE_API_URL on Vercel), fallback to local proxy '/api/v1'
+const baseURL = import.meta.env.VITE_API_URL 
+  ? `${import.meta.env.VITE_API_URL.replace(/\/+$/, '')}/api/v1` 
+  : '/api/v1';
+
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
