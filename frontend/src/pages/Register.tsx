@@ -66,9 +66,19 @@ export const Register: React.FC = () => {
         </div>
 
         {error && (
-          <div className="p-3 mb-6 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
+          <div className="p-3.5 mb-6 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+            {error.includes('already exist') && (
+              <Link
+                to="/login"
+                className="mt-1 inline-flex items-center gap-1.5 font-semibold text-teal-400 hover:text-teal-300 underline"
+              >
+                Click here to Sign In with this email →
+              </Link>
+            )}
           </div>
         )}
 
