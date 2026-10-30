@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: aquamark_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: aquamark
+      POSTGRES_PASSWORD: aquamark_secure_password_2026
+      POSTGRES_DB: aquamark_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aquamark_backend
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://aquamark:aquamark_secure_password_2026@db:5432/aquamark_db
+      SECRET_KEY: production-secret-key-ed25519-aquamark-platform
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    volumes:
+      - ./backend/storage:/app/storage
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: aquamark_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
